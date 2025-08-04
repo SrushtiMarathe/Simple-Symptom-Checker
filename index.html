@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Symptom Checker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4 font-sans">
+
+    <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-2xl border border-gray-200">
+        <div class="text-center mb-6">
+            <h1 class="text-3xl font-extrabold text-blue-600">Simple Symptom Checker</h1>
+            <p class="text-gray-500 mt-2">Enter your symptoms to find potential conditions.</p>
+        </div>
+
+        <div class="bg-yellow-50 text-yellow-800 p-4 rounded-lg border border-yellow-200 mb-6 text-sm">
+            <p class="font-bold">Disclaimer:</p>
+            <p>This is an educational tool and is NOT a substitute for professional medical advice. Always consult a healthcare professional for a proper diagnosis.</p>
+        </div>
+
+        <div class="mb-6">
+            <h2 class="text-xl font-bold text-gray-800 mb-2">Common Symptoms</h2>
+            <div id="predefinedSymptomsList" class="flex flex-wrap gap-2">
+            </div>
+        </div>
+
+        <div class="mb-4 flex items-center gap-2">
+            <input
+                id="symptomInput"
+                type="text"
+                placeholder="Enter a symptom..."
+                class="flex-grow px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+            >
+            <button
+                id="addSymptomBtn"
+                class="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+            </button>
+        </div>
+
+        <div class="mb-6">
+            <div id="symptomsList" class="flex flex-wrap gap-2 min-h-[40px] p-2 bg-gray-50 rounded-lg border border-gray-200">
+            </div>
+        </div>
+
+        <div class="flex gap-4 mb-6">
+            <button
+                id="diagnoseBtn"
+                class="flex-grow bg-blue-600 text-white font-bold py-3 rounded-lg shadow-md hover:bg-blue-700 transition-colors duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            >
+                Diagnose
+            </button>
+            <button
+                id="clearAllBtn"
+                class="flex-grow bg-gray-200 text-gray-700 font-bold py-3 rounded-lg shadow-md hover:bg-gray-300 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+            >
+                Clear All
+            </button>
+        </div>
+
+        <div id="resultsArea">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">Possible Conditions</h2>
+            <div id="resultsContainer" class="grid gap-4">
+                <p class="text-gray-500 text-center">Enter symptoms and click 'Diagnose' to see results.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const diseases = [
+            { name: 'Common Cold', symptoms: ['runny nose', 'sore throat', 'cough', 'sneezing', 'headache', 'fatigue'] },
+            { name: 'Influenza (Flu)', symptoms: ['fever', 'chills', 'muscle aches', 'headache', 'fatigue', 'cough', 'sore throat'] },
+            { name: 'Allergies', symptoms: ['sneezing', 'runny nose', 'itchy eyes', 'congestion', 'itchy throat'] },
+            { name: 'Strep Throat', symptoms: ['sore throat', 'fever', 'headache', 'stomach ache'] },
+            { name: 'Migraine', symptoms: ['severe headache', 'nausea', 'sensitivity to light', 'sensitivity to sound'] },
+            { name: 'Pneumonia', symptoms: ['fever', 'chills', 'cough', 'shortness of breath', 'chest pain', 'fatigue'] },
+            { name: 'Conjunctivitis', symptoms: ['red eyes', 'itchy eyes', 'watery eyes', 'blurred vision'] },
+            { name: 'Gastroenteritis', symptoms: ['diarrhea', 'vomiting', 'stomach cramps', 'nausea', 'fever'] },
+            { name: 'Mononucleosis', symptoms: ['fatigue', 'sore throat', 'fever', 'swollen lymph nodes'] },
+            { name: 'COVID-19', symptoms: ['fever', 'cough', 'shortness of breath', 'fatigue', 'muscle aches', 'sore throat', 'loss of taste', 'loss of smell'] },
+            { name: 'Asthma', symptoms: ['shortness of breath', 'wheezing', 'cough', 'chest tightness'] },
+            { name: 'Food Poisoning', symptoms: ['nausea', 'vomiting', 'diarrhea', 'stomach cramps', 'fever'] },
+            { name: 'Urinary Tract Infection (UTI)', symptoms: ['painful urination', 'frequent urination', 'pelvic pain', 'fever'] },
+            { name: 'Eczema', symptoms: ['itchy skin', 'red rash', 'dry skin', 'flaky skin'] },
+            { name: 'Depression', symptoms: ['persistent sadness', 'loss of interest', 'fatigue', 'sleep problems', 'changes in appetite'] },
+            { name: 'Anxiety Disorder', symptoms: ['excessive worry', 'restlessness', 'fatigue', 'difficulty concentrating', 'muscle tension'] },
+            { name: 'Hypertension', symptoms: ['headache', 'dizziness', 'chest pain', 'shortness of breath', 'nosebleeds'] },
+            { name: 'Diabetes Mellitus', symptoms: ['frequent urination', 'increased thirst', 'fatigue', 'blurred vision', 'slow-healing sores'] },
+            { name: 'Hypothyroidism', symptoms: ['fatigue', 'weight gain', 'cold sensitivity', 'constipation', 'dry skin'] },
+            { name: 'Hyperthyroidism', symptoms: ['weight loss', 'rapid heartbeat', 'anxiety', 'sweating', 'tremor'] },
+            { name: 'Irritable Bowel Syndrome (IBS)', symptoms: ['abdominal pain', 'cramping', 'bloating', 'gas', 'diarrhea', 'constipation'] },
+            { name: 'Heart Attack', symptoms: ['chest pain', 'shortness of breath', 'nausea', 'dizziness', 'cold sweats'] },
+            { name: 'Stroke', symptoms: ['face drooping', 'arm weakness', 'speech difficulty', 'dizziness', 'severe headache'] },
+            { name: 'Kidney Stones', symptoms: ['severe back pain', 'painful urination', 'nausea', 'vomiting', 'fever'] },
+            { name: 'Appendicitis', symptoms: ['abdominal pain', 'loss of appetite', 'nausea', 'vomiting', 'fever'] },
+            { name: 'Gallstones', symptoms: ['severe abdominal pain', 'back pain', 'nausea', 'vomiting', 'jaundice'] },
+            { name: 'Arthritis', symptoms: ['joint pain', 'stiffness', 'swelling', 'redness', 'decreased range of motion'] },
+            { name: 'Osteoporosis', symptoms: ['back pain', 'loss of height', 'stooped posture', 'bone fractures'] },
+            { name: 'Lyme Disease', symptoms: ['fever', 'chills', 'headache', 'fatigue', 'muscle aches', 'joint pain', 'rash'] },
+            { name: 'Chickenpox', symptoms: ['itchy rash', 'fever', 'headache', 'fatigue', 'loss of appetite'] },
+            { name: 'Shingles', symptoms: ['painful rash', 'blisters', 'fever', 'headache', 'fatigue'] },
+            { name: 'Measles', symptoms: ['high fever', 'cough', 'runny nose', 'red eyes', 'rash'] },
+            { name: 'Mumps', symptoms: ['fever', 'headache', 'muscle aches', 'swollen salivary glands'] },
+            { name: 'Whooping Cough', symptoms: ['runny nose', 'low-grade fever', 'coughing fits', 'vomiting'] },
+            { name: 'Tuberculosis', symptoms: ['cough', 'chest pain', 'fatigue', 'weight loss', 'night sweats', 'fever'] },
+            { name: 'HIV/AIDS', symptoms: ['fever', 'fatigue', 'swollen lymph nodes', 'sore throat', 'headache'] },
+            { name: 'Hepatitis A', symptoms: ['fatigue', 'nausea', 'abdominal pain', 'jaundice', 'dark urine'] },
+            { name: 'Hepatitis B', symptoms: ['fatigue', 'nausea', 'abdominal pain', 'jaundice', 'dark urine'] },
+            { name: 'Hepatitis C', symptoms: ['fatigue', 'fever', 'nausea', 'abdominal pain', 'jaundice'] },
+            { name: 'Dengue Fever', symptoms: ['high fever', 'severe headache', 'joint pain', 'muscle pain', 'rash'] },
+            { name: 'Malaria', symptoms: ['fever', 'chills', 'sweating', 'headache', 'nausea', 'vomiting'] },
+            { name: 'Typhoid Fever', symptoms: ['high fever', 'headache', 'weakness', 'abdominal pain', 'constipation'] },
+            { name: 'Cholera', symptoms: ['severe diarrhea', 'vomiting', 'dehydration', 'rapid heart rate'] },
+            { name: 'Ebola', symptoms: ['fever', 'severe headache', 'muscle pain', 'weakness', 'fatigue', 'diarrhea', 'vomiting'] },
+            { name: 'Zika Virus', symptoms: ['fever', 'rash', 'joint pain', 'red eyes', 'headache'] },
+            { name: 'Chikungunya', symptoms: ['fever', 'severe joint pain', 'muscle pain', 'headache', 'rash'] },
+            { name: 'Yellow Fever', symptoms: ['fever', 'headache', 'muscle aches', 'backache', 'vomiting'] },
+            { name: 'Rabies', symptoms: ['fever', 'headache', 'nausea', 'vomiting', 'anxiety', 'confusion'] },
+            { name: 'Tetanus', symptoms: ['jaw cramping', 'muscle spasms', 'stiffness', 'headache', 'fever'] },
+            { name: 'Sepsis', symptoms: ['fever', 'shivering', 'confusion', 'shortness of breath', 'rapid heart rate'] },
+            { name: 'Anemia', symptoms: ['fatigue', 'weakness', 'pale skin', 'shortness of breath', 'dizziness'] },
+            { name: 'Hypoglycemia', symptoms: ['shakiness', 'dizziness', 'sweating', 'hunger', 'confusion'] },
+            { name: 'Hyperglycemia', symptoms: ['increased thirst', 'frequent urination', 'fatigue', 'blurred vision', 'headache'] },
+            { name: 'Psoriasis', symptoms: ['red patches of skin', 'silvery scales', 'itchiness', 'joint pain'] },
+            { name: 'Rosacea', symptoms: ['facial redness', 'flushing', 'visible blood vessels', 'acne-like bumps'] },
+            { name: 'Atopic Dermatitis (Eczema)', symptoms: ['itchy skin', 'red rash', 'dry skin', 'flaky skin'] },
+            { name: 'Shingles', symptoms: ['painful rash', 'blisters', 'fever', 'headache', 'fatigue'] },
+            { name: 'Lupus', symptoms: ['joint pain', 'fatigue', 'fever', 'butterfly-shaped rash', 'chest pain'] },
+            { name: 'Rheumatoid Arthritis', symptoms: ['joint pain', 'joint swelling', 'stiffness', 'fatigue', 'fever'] },
+            { name: 'Gout', symptoms: ['severe joint pain', 'swelling', 'redness', 'heat in the joint'] },
+            { name: 'Fibromyalgia', symptoms: ['widespread pain', 'fatigue', 'sleep problems', 'memory issues'] },
+            { name: 'Chronic Fatigue Syndrome', symptoms: ['extreme fatigue', 'sleep problems', 'muscle pain', 'headache', 'sore throat'] },
+            { name: 'Multiple Sclerosis', symptoms: ['numbness', 'tingling', 'muscle weakness', 'vision problems', 'fatigue'] },
+            { name: 'Parkinson\'s Disease', symptoms: ['tremors', 'stiffness', 'slow movement', 'balance problems', 'speech changes'] },
+            { name: 'Alzheimer\'s Disease', symptoms: ['memory loss', 'confusion', 'difficulty with tasks', 'mood changes', 'poor judgment'] },
+            { name: 'Schizophrenia', symptoms: ['hallucinations', 'delusions', 'disorganized speech', 'social withdrawal'] },
+            { name: 'Bipolar Disorder', symptoms: ['mood swings', 'changes in energy', 'changes in sleep patterns', 'changes in activity levels'] },
+            { name: 'Panic Disorder', symptoms: ['panic attacks', 'chest pain', 'dizziness', 'shortness of breath', 'fear of dying'] },
+            { name: 'Obsessive-Compulsive Disorder (OCD)', symptoms: ['obsessions', 'compulsions', 'anxiety', 'distress'] },
+            { name: 'Post-Traumatic Stress Disorder (PTSD)', symptoms: ['flashbacks', 'nightmares', 'severe anxiety', 'avoidance of places or people'] },
+            { name: 'Borderline Personality Disorder', symptoms: ['fear of abandonment', 'unstable relationships', 'impulsive behavior', 'mood swings'] },
+            { name: 'Addiction', symptoms: ['uncontrollable cravings', 'inability to stop use', 'withdrawal symptoms', 'neglect of responsibilities'] },
+            { name: 'Celiac Disease', symptoms: ['diarrhea', 'bloating', 'abdominal pain', 'weight loss', 'fatigue'] },
+            { name: 'Crohn\'s Disease', symptoms: ['abdominal pain', 'diarrhea', 'fatigue', 'weight loss', 'fever'] },
+            { name: 'Ulcerative Colitis', symptoms: ['bloody diarrhea', 'abdominal pain', 'fatigue', 'weight loss', 'fever'] },
+            { name: 'Diverticulitis', symptoms: ['abdominal pain', 'fever', 'nausea', 'vomiting', 'constipation'] },
+            { name: 'Gastritis', symptoms: ['abdominal pain', 'nausea', 'vomiting', 'bloating', 'loss of appetite'] },
+            { name: 'Appendicitis', symptoms: ['abdominal pain', 'loss of appetite', 'nausea', 'vomiting', 'fever'] },
+            { name: 'Gallstones', symptoms: ['severe abdominal pain', 'back pain', 'nausea', 'vomiting', 'jaundice'] },
+            { name: 'Pancreatitis', symptoms: ['severe abdominal pain', 'back pain', 'nausea', 'vomiting', 'fever', 'rapid heartbeat'] },
+            { name: 'Kidney Stones', symptoms: ['severe back pain', 'painful urination', 'nausea', 'vomiting', 'fever'] },
+            { name: 'Urinary Tract Infection (UTI)', symptoms: ['painful urination', 'frequent urination', 'pelvic pain', 'fever'] },
+            { name: 'Prostatitis', symptoms: ['painful urination', 'pelvic pain', 'pain in the groin', 'fever'] },
+            { name: 'Glaucoma', symptoms: ['eye pain', 'blurred vision', 'redness of the eye', 'halos around lights'] },
+            { name: 'Cataracts', symptoms: ['cloudy vision', 'blurry vision', 'faded colors', 'poor night vision'] },
+            { name: 'Macular Degeneration', symptoms: ['blurred central vision', 'dark or empty area in the center of vision', 'wavy lines'] },
+            { name: 'Retinal Detachment', symptoms: ['flashes of light', 'floaters', 'shadow or curtain in vision', 'blurred vision'] },
+            { name: 'Tinnitus', symptoms: ['ringing in the ears', 'buzzing in the ears', 'roaring sound in the ears'] },
+            { name: 'Meniere\'s Disease', symptoms: ['vertigo', 'dizziness', 'hearing loss', 'tinnitus'] },
+            { name: 'Hearing Loss', symptoms: ['difficulty hearing', 'muffled sounds', 'difficulty understanding speech'] },
+            { name: 'Vertigo', symptoms: ['dizziness', 'spinning sensation', 'nausea', 'vomiting'] },
+            { name: 'Sinusitis', symptoms: ['nasal congestion', 'facial pain', 'headache', 'sore throat', 'fever'] },
+            { name: 'Tonsillitis', symptoms: ['sore throat', 'swollen tonsils', 'difficulty swallowing', 'fever'] },
+            { name: 'Laryngitis', symptoms: ['hoarse voice', 'sore throat', 'difficulty speaking', 'dry cough'] },
+            { name: 'Pleurisy', symptoms: ['chest pain', 'shortness of breath', 'cough', 'fever'] },
+            { name: 'Bronchitis', symptoms: ['cough', 'mucus production', 'fatigue', 'shortness of breath', 'chest discomfort'] },
+            { name: 'Emphysema', symptoms: ['shortness of breath', 'chronic cough', 'wheezing', 'fatigue'] },
+            { name: 'Cystic Fibrosis', symptoms: ['chronic cough', 'wheezing', 'recurrent lung infections', 'poor growth', 'greasy stools'] },
+            { name: 'Sarcoidosis', symptoms: ['fatigue', 'fever', 'weight loss', 'cough', 'shortness of breath', 'skin lesions'] },
+            { name: 'Thyroiditis', symptoms: ['neck pain', 'sore throat', 'difficulty swallowing', 'fever'] },
+            { name: 'Goiter', symptoms: ['swelling in the neck', 'difficulty swallowing', 'cough', 'hoarse voice'] },
+            { name: 'Hyperparathyroidism', symptoms: ['fatigue', 'weakness', 'nausea', 'abdominal pain', 'kidney stones'] },
+            { name: 'Hypoparathyroidism', symptoms: ['tingling in fingers and toes', 'muscle aches', 'muscle spasms'] },
+            { name: 'Addison\'s Disease', symptoms: ['fatigue', 'weight loss', 'nausea', 'vomiting', 'dizziness'] },
+            { name: 'Cushing\'s Syndrome', symptoms: ['weight gain', 'fatigue', 'muscle weakness', 'easy bruising', 'high blood pressure'] },
+            { name: 'Acromegaly', symptoms: ['swollen hands and feet', 'enlarged facial features', 'headache', 'joint pain'] },
+            { name: 'Osteoarthritis', symptoms: ['joint pain', 'stiffness', 'loss of flexibility', 'grating sensation in joint'] },
+            { name: 'Scleroderma', symptoms: ['thickening of the skin', 'swelling of the fingers', 'joint pain', 'difficulty swallowing'] },
+            { name: 'Polymyalgia Rheumatica', symptoms: ['muscle pain and stiffness', 'fatigue', 'fever', 'weight loss'] },
+            { name: 'Ankylosing Spondylitis', symptoms: ['back pain', 'stiffness', 'joint pain', 'fatigue'] },
+            { name: 'Spinal Stenosis', symptoms: ['back pain', 'numbness or tingling in legs', 'weakness in legs'] },
+            { name: 'Sciatica', symptoms: ['pain radiating down the leg', 'numbness', 'tingling', 'muscle weakness'] },
+            { name: 'Herniated Disc', symptoms: ['arm or leg pain', 'numbness or tingling', 'weakness'] },
+            { name: 'Carpal Tunnel Syndrome', symptoms: ['numbness or tingling in hand', 'weakness in hand', 'pain in wrist'] },
+            { name: 'Tennis Elbow', symptoms: ['pain on the outside of the elbow', 'weak grip strength'] },
+            { name: 'Plantar Fasciitis', symptoms: ['heel pain', 'stiffness in the foot'] },
+            { name: 'Tendonitis', symptoms: ['pain in the tendon', 'swelling', 'tenderness'] },
+            { name: 'Bursitis', symptoms: ['joint pain', 'swelling', 'tenderness'] },
+            { name: 'Menopause', symptoms: ['hot flashes', 'night sweats', 'mood swings', 'vaginal dryness'] },
+            { name: 'Endometriosis', symptoms: ['pelvic pain', 'painful periods', 'heavy bleeding', 'pain with intercourse'] },
+            { name: 'Polycystic Ovary Syndrome (PCOS)', symptoms: ['irregular periods', 'acne', 'weight gain', 'excess hair growth'] },
+            { name: 'Prostate Cancer', symptoms: ['difficulty urinating', 'frequent urination', 'blood in urine', 'erectile dysfunction'] },
+            { name: 'Testicular Cancer', symptoms: ['lump in the testicle', 'heaviness in the scrotum', 'dull ache in the groin'] },
+            { name: 'Erectile Dysfunction', symptoms: ['difficulty getting an erection', 'difficulty maintaining an erection'] },
+            { name: 'Premature Ejaculation', symptoms: ['inability to control ejaculation'] },
+            { name: 'Herpes', symptoms: ['sores or blisters', 'pain', 'itching', 'fever', 'headache'] },
+            { name: 'Syphilis', symptoms: ['painless sores', 'rash', 'fever', 'sore throat', 'headache'] },
+            { name: 'Gonorrhea', symptoms: ['painful urination', 'discharge from penis or vagina', 'abdominal pain'] },
+            { name: 'Chlamydia', symptoms: ['painful urination', 'discharge from penis or vagina', 'abdominal pain'] },
+            { name: 'Trichomoniasis', symptoms: ['itching and redness in the genitals', 'foul-smelling discharge', 'painful urination'] },
+            { name: 'Candidiasis', symptoms: ['itching and redness', 'white discharge', 'pain with urination'] },
+            { name: 'Bacterial Vaginosis', symptoms: ['fishy odor', 'thin gray discharge', 'itching and burning'] },
+            { name: 'Anaphylaxis', symptoms: ['hives', 'swelling of the throat', 'difficulty breathing', 'dizziness', 'rapid heartbeat'] },
+            { name: 'Hypothermia', symptoms: ['shivering', 'confusion', 'slurred speech', 'slow breathing', 'loss of consciousness'] },
+            { name: 'Heatstroke', symptoms: ['high body temperature', 'hot, red skin', 'rapid pulse', 'headache', 'dizziness', 'confusion'] },
+            { name: 'Dehydration', symptoms: ['thirst', 'dry mouth', 'dizziness', 'fatigue', 'dark urine'] },
+            { name: 'Concussion', symptoms: ['headache', 'dizziness', 'confusion', 'nausea', 'memory problems'] },
+            { name: 'Fracture', symptoms: ['severe pain', 'swelling', 'bruising', 'inability to use the limb'] },
+            { name: 'Dislocation', symptoms: ['severe pain', 'swelling', 'inability to move the joint', 'deformity of the joint'] },
+            { name: 'Sprain', symptoms: ['pain', 'swelling', 'bruising', 'limited movement'] },
+            { name: 'Strain', symptoms: ['pain', 'swelling', 'muscle spasms', 'limited movement'] },
+        ];
+
+        const symptomInput = document.getElementById('symptomInput');
+        const addSymptomBtn = document.getElementById('addSymptomBtn');
+        const diagnoseBtn = document.getElementById('diagnoseBtn');
+        const clearAllBtn = document.getElementById('clearAllBtn');
+        const symptomsList = document.getElementById('symptomsList');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const predefinedSymptomsList = document.getElementById('predefinedSymptomsList');
+
+        let selectedSymptoms = [];
+
+        function normalizeSymptom(symptom) {
+            return symptom.toLowerCase().trim();
+        }
+
+        function renderSymptoms() {
+            symptomsList.innerHTML = '';
+            if (selectedSymptoms.length === 0) {
+                symptomsList.innerHTML = '<p class="text-gray-400 italic text-sm">No symptoms added yet.</p>';
+                return;
+            }
+
+            selectedSymptoms.forEach(symptom => {
+                const symptomTag = document.createElement('span');
+                symptomTag.className = 'flex items-center gap-1 px-3 py-1 bg-blue-200 text-blue-800 rounded-full text-sm font-medium';
+                symptomTag.innerHTML = `
+                    ${symptom}
+                    <button class="text-blue-600 hover:text-blue-900 transition-colors duration-200 remove-symptom-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                    </button>
+                `;
+                symptomTag.querySelector('.remove-symptom-btn').addEventListener('click', () => {
+                    removeSymptom(symptom);
+                });
+                symptomsList.appendChild(symptomTag);
+            });
+        }
+        
+        function renderPredefinedSymptoms() {
+            const allSymptoms = diseases.flatMap(d => d.symptoms);
+            const uniqueSymptoms = [...new Set(allSymptoms)];
+            const commonSymptoms = ['fever', 'cough', 'fatigue', 'headache', 'sore throat', 'runny nose', 'nausea', 'shortness of breath'];
+
+            commonSymptoms.forEach(symptom => {
+                const symptomBtn = document.createElement('button');
+                symptomBtn.textContent = symptom;
+                symptomBtn.className = 'px-3 py-1 bg-gray-200 text-gray-800 rounded-full text-sm hover:bg-gray-300 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2';
+                symptomBtn.addEventListener('click', () => {
+                    addSymptom(symptom);
+                });
+                predefinedSymptomsList.appendChild(symptomBtn);
+            });
+        }
+
+        function addSymptom(symptomToAdd = symptomInput.value) {
+            const newSymptom = normalizeSymptom(symptomToAdd);
+            if (newSymptom && !selectedSymptoms.includes(newSymptom)) {
+                selectedSymptoms.push(newSymptom);
+                symptomInput.value = '';
+                renderSymptoms();
+            }
+        }
+
+        function removeSymptom(symptomToRemove) {
+            selectedSymptoms = selectedSymptoms.filter(symptom => symptom !== symptomToRemove);
+            renderSymptoms();
+        }
+
+        function diagnose() {
+            if (selectedSymptoms.length === 0) {
+                resultsContainer.innerHTML = '<p class="text-gray-500 text-center">No conditions matched your symptoms or no symptoms have been entered.</p>';
+                return;
+            }
+
+            diagnoseBtn.innerHTML = '<div class="flex items-center justify-center"><div class="loader mr-2"></div> Diagnosing...</div>';
+            diagnoseBtn.disabled = true;
+            clearAllBtn.disabled = true;
+
+            setTimeout(() => {
+                const diagnosisResults = [];
+
+                diseases.forEach(disease => {
+                    let matchCount = 0;
+                    const matchingSymptoms = [];
+                    selectedSymptoms.forEach(userSymptom => {
+                        if (disease.symptoms.includes(userSymptom)) {
+                            matchCount++;
+                            matchingSymptoms.push(userSymptom);
+                        }
+                    });
+
+                    if (matchCount > 0) {
+                        diagnosisResults.push({
+                            name: disease.name,
+                            matchCount: matchCount,
+                            matchingSymptoms: matchingSymptoms,
+                            totalSymptoms: disease.symptoms.length
+                        });
+                    }
+                });
+
+                diagnosisResults.sort((a, b) => b.matchCount - a.matchCount);
+
+                console.log('Diagnosis Results:', diagnosisResults);
+
+                resultsContainer.innerHTML = '';
+                if (diagnosisResults.length > 0) {
+                    diagnosisResults.forEach(result => {
+                        const resultDiv = document.createElement('div');
+                        resultDiv.className = 'bg-gray-50 p-4 rounded-lg shadow-sm border border-gray-200';
+                        resultDiv.innerHTML = `
+                            <h3 class="text-xl font-bold text-blue-600 mb-2">${result.name}</h3>
+                            <p class="text-gray-600 mb-2">
+                                <span class="font-semibold">Matching Symptoms:</span> ${result.matchingSymptoms.join(', ')}
+                            </p>
+                            <p class="text-sm text-gray-500">
+                                <span class="font-medium">Symptom Match Score:</span> ${result.matchCount} of ${result.totalSymptoms}
+                            </p>
+                        `;
+                        resultsContainer.appendChild(resultDiv);
+                    });
+                } else {
+                    resultsContainer.innerHTML = '<p class="text-gray-500 text-center">No conditions matched your symptoms.</p>';
+                }
+
+                diagnoseBtn.innerHTML = 'Diagnose';
+                diagnoseBtn.disabled = false;
+                clearAllBtn.disabled = false;
+            }, 500);
+        }
+
+        function clearAll() {
+            selectedSymptoms = [];
+            renderSymptoms();
+            resultsContainer.innerHTML = '<p class="text-gray-500 text-center">Enter symptoms and click \'Diagnose\' to see results.</p>';
+        }
+
+        addSymptomBtn.addEventListener('click', () => addSymptom());
+        symptomInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                addSymptom();
+            }
+        });
+        diagnoseBtn.addEventListener('click', diagnose);
+        clearAllBtn.addEventListener('click', clearAll);
+
+        renderSymptoms();
+        renderPredefinedSymptoms();
+    </script>
+</body>
+</html>
